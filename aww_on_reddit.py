@@ -112,9 +112,9 @@ else:
                         #print('image: ', moa_image)
                         
                         # 포스트 요약을 수집/가공한다.
-                        moa_desc = subsoap.find('meta', property="og:description")
-                        if moa_desc:
-                            moa_desc = moa_desc['content']
+                        #moa_desc = subsoap.find('meta', property="og:description")
+                        #if moa_desc:
+                        #    moa_desc = moa_desc['content']
                         #print('desc: ', moa_desc)
                         
                         # 현재 날짜와 시간을 수집한다.
@@ -125,7 +125,7 @@ else:
                         if my_db.isNewItem('title', moa_title):
                             # 데이터 타입을 확인한다.
                             assert type(moa_title) == str, 'title: type error'
-                            assert type(moa_desc) == str, 'desc: type error'
+                            #assert type(moa_desc) == str, 'desc: type error'
                             assert type(moa_url) == str, 'url: type error'
                             assert type(moa_image) == str, 'image: type error'
                             assert type(moa_site_name) == str, 'siteName: type error'
@@ -134,7 +134,7 @@ else:
                             assert type(moa_timeStamp) == datetime, 'timeStamp: type error'
 
                             db_data = { 'title': moa_title, 
-                                'desc': moa_desc,
+                                #'desc': moa_desc,
                                 'url': moa_url,
                                 'image': moa_image,
                                 'siteName': moa_site_name,
@@ -145,11 +145,14 @@ else:
 
                             # 디버그를 위해서 수집한 데이터를 출력한다.
                             temp_data = db_data.copy()
-                            temp_data['desc'] = temp_data['desc'][:50]
+                            #temp_data['desc'] = temp_data['desc'][:50]
                             print(json.dumps(temp_data, indent=4, ensure_ascii=False, default=str))
 
                             # 수집한 데이터를 데이터베이스에 전송한다.
                             my_db.insertTable(db_data)
+
+                            # ont time break
+                            break
                             
     # 데이터 베이스를 닫는다.
     my_db.close()
