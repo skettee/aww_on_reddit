@@ -1,3 +1,7 @@
+#
+# AWW on Reddit 
+#
+#%%
 import requests
 from requests.exceptions import HTTPError
 from bs4 import BeautifulSoup
@@ -6,9 +10,12 @@ import json
 from datetime import datetime
 from datetime import timedelta
 
-# moabot 컴포넌트를 가져온다.
-import moabot_database as moabot
-from moabot_id import *
+if __debug__:
+    import os.path
+
+# 모아보기 컴포넌트를 가져온다.
+import moabogey_database as moabogey
+from moabogey_id import *
 
 # 사이트 이름
 site_name = 'reddit'
@@ -16,7 +23,8 @@ site_name = 'reddit'
 section_name = 'aww'
 # 사이트 주소
 site_url = 'https://www.reddit.com/r/aww/'
-print('site url is: ', site_url)
+if __debug__:
+    print('{} 데이터 수집 중...'.format(site_url))
 
 # 사이트의 HTML을 가져온다.
 try:
@@ -29,34 +37,27 @@ except Exception as err:
         print(f'Other error occurred: {err}')
 else:
     html_source = response.text
-    #print(response.status_code)
-    #print(html_source)
     
     # BeautifulSoup 오브젝트를 생성한다.
     soup = BeautifulSoup(html_source, 'html.parser')
     
-    # 디버그를 위해서 page의 소스를 파일로 저장한다.
-    # 봇으로 등록하기 위해서는 주석처리를 해야한다.
-    #import os.path
-    #file_name = site_name + '_requests.html'
-    #if not os.path.isfile(file_name):
-    #    print('file save: ', file_name)
-    #    with open(file_name, 'w') as f:
-    #        f.write(soup.prettify())
+    # HTML을 분석하기 위해서 페이지의 소스를 파일로 저장한다.
+    if __debug__:
+        file_name = site_name + '_source.html'
+        if not os.path.isfile(file_name):
+            print('file save: ', file_name)
+            with open(file_name, 'w', encoding='utf-8') as f:
+                f.write(soup.prettify())
             
     # 데이터를 저장할 데이터베이스를 연다. 
     # bot_id는 moabot_id에서 가져오는 변수값이다.
-    # 프로그램을 종료하기 전에 데이터 베이스를 닫아야 한다.
     db_name = section_name + '_on_' + site_name 
-    my_db = moabot.Dbase(db_name, bot_id)
+    my_db = moabogey.Dbase(db_name, bot_id)
     
     # 반복해서 리스트의 목록을 하나씩 검색하고 데이터를 수집한다.
     for post in soup.find_all('div', class_='scrollerItem'):
         # 붙박이 포스트는 수집하지 않는다.
         if post.text.find('Stickied post') == -1:
-            #print(post.text)
-            #for item in post.find_all('a'):
-            #    print(item.text)
             item = post.find_all('a')
             if(item):
                 # 포스트를 올린 작성자를 수집한다.
@@ -89,9 +90,14 @@ else:
                     else:
                         subhtml_source = response.text
                         subsoap = BeautifulSoup(subhtml_source, 'html.parser')
-                        #with open(f'{site_name}_section_request.html', 'w') as f:
-                        #    f.write(subsoap.prettify())
-                        #break
+                        
+                        # HTML을 분석하기 위해서 포스트의 소스를 파일로 저장한다.
+                        if __debug__:
+                            file_name = site_name + '_post_source.html'
+                            if not os.path.isfile(file_name):
+                                print('file save: ', file_name)
+                                with open(file_name, 'w', encoding='utf-8') as f:
+                                    f.write(post.prettify())
                         
                         # 사이트 이름을 수집한다.
                         moa_site_name = subsoap.find('meta', property="og:site_name")
@@ -143,17 +149,23 @@ else:
                                 'timeStamp': moa_timeStamp
                             }
 
-                            # 디버그를 위해서 수집한 데이터를 출력한다.
-                            temp_data = db_data.copy()
-                            #temp_data['desc'] = temp_data['desc'][:50]
-                            print(json.dumps(temp_data, indent=4, ensure_ascii=False, default=str))
+                            if __debug__:
+                                # 디버그를 위해서 수집한 데이터를 출력한다.
+                                temp_data = db_data.copy()
+                                #temp_data['desc'] = temp_data['desc'][:20] + '...'
+                                print('collected json data: ')
+                                print(json.dumps(temp_data, indent=4, ensure_ascii=False, default=str))
 
                             # 수집한 데이터를 데이터베이스에 전송한다.
                             my_db.insertTable(db_data)
 
-                            # ont time break
+                            # 수집이 완료되면 루프를 종료한다.
                             break
                             
+    # 데이터 베이스에 저장된 데이터를 디스플레이 한다.
+    if __debug__:
+        my_db.displayHTML()
+
     # 데이터 베이스를 닫는다.
     my_db.close()
 
